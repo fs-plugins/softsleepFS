@@ -1,0 +1,14 @@
+<setupxml>
+	<setup key="autoshutdown" showOpenWebIF="1" title="AutoShutDown">
+		<item level="0" text="Enable automatic power off in standby:">config.softsleepfs.autostart</item>
+		<item level="0" text="Time in standby for power off (min):">config.softsleepfs.time</item>
+		<item level="0" text="Enable action after inactivity:">config.softsleepfs.enableinactivity</item>
+		<item level="0" text="Time for inactivity (min):">config.softsleepfs.inactivetime</item>
+		<item level="0" text="Action for inactivity:">config.softsleepfs.inactivityaction</item>
+		<item level="0" text="Disable inactivity action at timeshift:">config.softsleepfs.disable_at_ts</item>
+		<item level="0" text="Show message before inactivity action:">config.softsleepfs.inactivitymessage</item>
+		<item level="0" text="Message timeout (sec):">config.softsleepfs.messagetimeout</item>
+		<item level="0" text="Disable power off in EPGRefresh interval:">config.softsleepfs.epgrefresh</item>
+		<item level="0" text="Show in Extensions/Plugins:">config.softsleepfs.plugin</item>
+	</setup>
+</setupxml>
