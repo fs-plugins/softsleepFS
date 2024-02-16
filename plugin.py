@@ -49,7 +49,7 @@ def calculateTime(hours, minutes, day_offset = 0):
 from enigma import eDVBVolumecontrol
 from Components.VolumeControl import VolumeControl
 
-version="1.5"
+version="1.6"
 config.plugins.softsleepFS = ConfigSubsection()
 config.plugins.softsleepFS.time = ConfigInteger(default = 120, limits = (1, 9999))
 config.plugins.softsleepFS.inactivetime = ConfigInteger(default = 300, limits = (1, 1440))
@@ -545,7 +545,7 @@ def main(session, **kwargs):
 def startSetup(menuid):
 	if menuid != "shutdown":
 		return [ ]
-	return [("softsleepFS "+_("settings") , main, "softsleepFS_setup", 60)]
+	return [(_("AutoShutDown settings")+" +" , main, "softsleepFS_setup", 60)]
 
 def Plugins(**kwargs):
 	list=[]
