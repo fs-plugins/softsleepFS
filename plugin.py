@@ -49,7 +49,7 @@ def calculateTime(hours, minutes, day_offset = 0):
 from enigma import eDVBVolumecontrol
 from Components.VolumeControl import VolumeControl
 
-version="1.6"
+version="1.7"
 config.plugins.softsleepFS = ConfigSubsection()
 config.plugins.softsleepFS.time = ConfigInteger(default = 120, limits = (1, 9999))
 config.plugins.softsleepFS.inactivetime = ConfigInteger(default = 300, limits = (1, 1440))
@@ -64,6 +64,8 @@ config.plugins.softsleepFS.volsteps = ConfigInteger(default = 4, limits = (0, 20
 config.plugins.softsleepFS.disable_at_ts = ConfigYesNo(default = False)
 config.plugins.softsleepFS.disable_net_device = ConfigYesNo(default = False)
 config.plugins.softsleepFS.wait_for_end = ConfigYesNo(default = False) #edit by s
+config.plugins.softsleepFS.wait_max = ConfigInteger(default = 120, limits = (0, 1440))
+config.plugins.softsleepFS.wait_min = ConfigInteger(default = 15, limits = (1, 1440))
 config.plugins.softsleepFS.min_starttime = ConfigInteger(default = 20, limits = (1, 999))
 config.plugins.softsleepFS.disable_hdd = ConfigYesNo(default = False)
 config.plugins.softsleepFS.net_device = ConfigIP(default = [0,0,0,0])
@@ -202,7 +204,7 @@ class asdMessageBox(Screen):
 				self.timeoutCallback()
 
 	def timeoutCallback(self):
-		print ("[softsleepFS] Message-Timeout!")
+		#print ("[softsleepFS] Message-Timeout!")
 		if config.plugins.softsleepFS.debug.value:
 			f=open("/var/volatile/log/softsleepFS","a")
 			f.write( datetime.datetime.fromtimestamp(time()).strftime('%H:%M:%S') + " end shutdown and message, aktion\n")
@@ -261,6 +263,11 @@ class softsleepFSactionsfs:
 		self.session=self
 		self.message=None
 		self.volctrl = eDVBVolumecontrol.getInstance()
+		self.bgr=128
+		now = datetime.datetime.now().hour
+		if now>=19:self.bgr=118
+		self.setHelligkeit(self.bgr)
+		#open("/proc/stb/vmpeg/0/pep_brightness", "w").write("%0.8X" % int(self.brg*256))
 		self.asdvolume_timer = eTimer()
 		self.asdvolume_timer.timeout.get().append(self.volume_down)
 		self.startTimer2 = eTimer()
@@ -272,10 +279,16 @@ class softsleepFSactionsfs:
 			self.stopKeyTimer()
 			self.asdvolume_timer.stop()
 			self.volctrl.setVolume(self.org_volume,self.org_volume)
+			self.setHelligkeit(self.bgr)
 			self.startKeyTimer()
 		else:
 			self.stopTimer()
 			self.startTimer()
+
+	def setHelligkeit(self,wert=0):
+		if wert>0:
+			open("/proc/stb/vmpeg/0/pep_brightness", "w").write("%0.8X" % int(wert*256))
+
 
 	def doShutDown(self):
 		do_shutdown = True
@@ -311,6 +324,7 @@ class softsleepFSactionsfs:
 		session.open(Screens.Standby.Standby)
 		self.asdvolume_timer.stop()
 		self.volctrl.setVolume(self.org_volume,self.org_volume)
+		self.setHelligkeit(self.bgr)
 
 	def startTimer(self):
 		if config.plugins.softsleepFS.autostart.value == True:
@@ -346,12 +360,10 @@ class softsleepFSactionsfs:
 					if not endtime: 
 						start_fail=True
 					else:
-						leng=endtime-nowtime
+						leng=int(endtime-nowtime)
 						if leng<60:leng=60
-						min_leng=int(config.plugins.softsleepFS.inactivetime.value)*60
-						if leng>min_leng:
-							min_wait=False
-						else:
+						min_leng=int(config.plugins.softsleepFS.wait_min.value)*60
+						if leng<=min_leng:
 							min_wait=True
 			if start_fail:
 				self.startTimer2.startLongTimer(5)
@@ -360,31 +372,31 @@ class softsleepFSactionsfs:
 				debtxt+="minimal time, first wait for next event: "+datetime.datetime.fromtimestamp(int(time()+leng)).strftime('%H:%M:%S') +", "+str(leng/60)+" minutes\n"
 				if leng>0:
 					self.startTimer2.startLongTimer(leng+60)
-				else:
-					inactivetime=None
+			else:
+				inactivetime=None
 
-			if leng:
-				inactivetime=leng*1000
-				r="next event: (wait for end until): "
-				t=leng
-			else:
-				inactivetime = config.plugins.softsleepFS.inactivetime.value
-				inactivetime=inactivetime*60000
-				r="next event: "
-				t=config.plugins.softsleepFS.inactivetime.value*60
-			if inactivetime and inactivetime>0:
-				try:
-					debtxt+=r+ datetime.datetime.fromtimestamp(int(time()+t)).strftime('%H:%M:%S') +", "+str(inactivetime/60000)+" minutes\n"
-					self.softsleepFSKeyTimer = eTimer()
-					self.softsleepFSKeyTimer.start(inactivetime, True)
-					self.softsleepFSKeyTimer.callback.append(shutdownactionsfs.endKeyTimer)
-				except Exception as e:
-					if config.plugins.softsleepFS.debug.value:
-						f=open("/var/volatile/log/softsleepFS","a")
-						f.write(str(e)+"\n")
-						f.close()
-			else:
-				debtxt+="no inactive time set\n"
+				if leng:
+					inactivetime=leng*1000
+					r="next event: (wait for end until): "
+					t=leng
+				else:
+					inactivetime = config.plugins.softsleepFS.inactivetime.value
+					inactivetime=inactivetime*60000
+					r="next event: "
+					t=config.plugins.softsleepFS.inactivetime.value*60
+				if inactivetime and inactivetime>0:
+					try:
+						debtxt+=r+ datetime.datetime.fromtimestamp(int(time()+t)).strftime('%H:%M:%S') +", "+str(inactivetime/60000)+" minutes\n"
+						self.softsleepFSKeyTimer = eTimer()
+						self.softsleepFSKeyTimer.start(inactivetime, True)
+						self.softsleepFSKeyTimer.callback.append(shutdownactionsfs.endKeyTimer)
+					except Exception as e:
+						if config.plugins.softsleepFS.debug.value:
+							f=open("/var/volatile/log/softsleepFS","a")
+							f.write(str(e)+"\n")
+							f.close()
+				else:
+					debtxt+="no inactive time set\n"
 			if config.plugins.softsleepFS.debug.value:
 				f=open("/var/volatile/log/softsleepFS","a")
 				f.write(debtxt)
@@ -395,6 +407,7 @@ class softsleepFSactionsfs:
 			self.softsleepFSKeyTimer.stop()
 			self.asdvolume_timer.stop()
 			self.volctrl.setVolume(self.org_volume,self.org_volume)
+			self.setHelligkeit(self.bgr)
 		except:
 			print ("[softsleepFS] No inactivity timer to stop")
 
@@ -423,6 +436,8 @@ class softsleepFSactionsfs:
 				elif config.plugins.softsleepFS.inactivityaction.value == "deepstandby":
 					self.asdkeyaction = _("Power off STB")
 				self.org_volume = int(self.volctrl.getVolume())
+				self.setHelligkeit(40)
+				#open("/proc/stb/vmpeg/0/pep_brightness", "w").write("%0.8X" % int(40*256))
 				if config.plugins.softsleepFS.volsteps.value:
 					self.vol_steps= config.plugins.softsleepFS.volsteps.value
 					self.volume_down()
@@ -486,8 +501,11 @@ class softsleepFSactionsfs:
 						vpos = seek.getPlayPosition()
 						if not vlength[0] and not vpos[0]:
 							vlength=vlength[1]/90000
-						vpos=vpos[1]/90000
-						endtime=int(time())+vlength-vpos
+						try:
+							vpos=int(vpos[1]/90000)
+							endtime=time()+vlength-vpos
+						except:
+							endtime=None
 				else:
 					info1 = s and s.info()
 					event1 = info1 and info1.getEvent(0)
@@ -500,6 +518,12 @@ class softsleepFSactionsfs:
 						leng = event1.getDuration()
 						if start and leng:
 							endtime = start + leng
+		maxtime=time()+(int(config.plugins.softsleepFS.wait_max.value)*60)
+		if endtime==None or endtime>maxtime:
+			if config.plugins.softsleepFS.wait_max.value>0:
+				endtime=maxtime
+			else:
+				endtime=time()+(int(config.plugins.softsleepFS.inactivetime.value)*60)
 		return (endtime,event_name)
 
 shutdownactionsfs = softsleepFSactionsfs()
@@ -620,12 +644,16 @@ class softsleepFSConfiguration(Screen, ConfigListScreen):
 		self.list.append(getConfigListEntry("---------- " + _("Configuration for inactivity actions"), config.plugins.softsleepFS.fake_entry))
 		self.list.append(getConfigListEntry(_("Enable action after inactivity:"), config.plugins.softsleepFS.enableinactivity))
 		if config.plugins.softsleepFS.enableinactivity.value == True:
-			self.list.append(getConfigListEntry(_("Time for inactivity (min):"), config.plugins.softsleepFS.inactivetime))
+			if config.plugins.softsleepFS.wait_for_end.value != True:
+				self.list.append(getConfigListEntry(_("Time for inactivity (min):"), config.plugins.softsleepFS.inactivetime))
+			self.list.append(getConfigListEntry(_("Wait for the end of the program:"), config.plugins.softsleepFS.wait_for_end)) #edit by s
+			if config.plugins.softsleepFS.wait_for_end.value == True:
+				self.list.append(getConfigListEntry(_("Minimum remaining length (min):"), config.plugins.softsleepFS.wait_min))
+				self.list.append(getConfigListEntry(_("Force switch off after (min):"), config.plugins.softsleepFS.wait_max))
 			self.list.append(getConfigListEntry(_("Action for inactivity:"), config.plugins.softsleepFS.inactivityaction))
 			self.list.append(getConfigListEntry(_("Lower Volume (sec.):"), config.plugins.softsleepFS.volsteps))
 			self.list.append(getConfigListEntry(_("Disable inactivity action at timeshift:"), config.plugins.softsleepFS.disable_at_ts))
 
-			self.list.append(getConfigListEntry(_("Wait for the end of the program:"), config.plugins.softsleepFS.wait_for_end)) #edit by s
 			self.list.append(getConfigListEntry(_("Show message before inactivity action:"), config.plugins.softsleepFS.inactivitymessage))
 			if config.plugins.softsleepFS.inactivitymessage.value == True:
 				self.list.append(getConfigListEntry(_("Message timeout (sec):"), config.plugins.softsleepFS.messagetimeout))
@@ -703,6 +731,8 @@ class softsleepFSConfiguration(Screen, ConfigListScreen):
 				config.plugins.softsleepFS.plugin.setValue(0)
 				config.plugins.softsleepFS.inactivitymessage.setValue(1)
 				config.plugins.softsleepFS.wait_for_end.setValue(0) #edit by s
+				config.plugins.softsleepFS.wait_max.setValue(120)
+				config.plugins.softsleepFS.wait_min.setValue(15)
 				config.plugins.softsleepFS.messagetimeout.setValue(20)
 				config.plugins.softsleepFS.disable_at_ts.setValue(0)
 				config.plugins.softsleepFS.disable_net_device.setValue(0)
