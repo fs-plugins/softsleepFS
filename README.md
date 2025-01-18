@@ -12,7 +12,10 @@ wichtigste Änderungen:
 - einstellbar ist, dass zusätzlich zur Dauer der Inaktivität anschließend bis zum Ende der Sendung gewartet wird
 es ist unschön, wenn die Zeitabschaltung immer mitten in irgendwelchen Sendungen greift
 funktioniert nur so zuverlässig, wie die now-/next-Funktion im System bzw. Erkennung der Dateilänge
-(Beispiel: wenn bei Inaktivität 15min eingestellt sind, dann wird nach einer Sendung länger als 15min abgeschaltet, wenn jedoch das Ende in 10min ist dann wird zur Abschaltung das Ende der nächsten Sendung verwendet)
+Einstellungen dafür:
+- nächste Sendung wenn weniger -> wenn die aktuelle Sendung weniger als diese Angabe dauert, wird das Ende der folgenden Sendung gewählt
+(wenn beim Einschalten die Sendung in 4min zu Ende ist, will sicher niemand ausschalten lassen..)
+- reagieren spätestens -> falls keine Ende-Zeit erkannt wird oder diese länger ist als hier eingestellt, wird stur nach diesen Minuten getimert
 
 
 - das 'brutale' abschalten kann mittels langsam absenkender Lautstärke abgemildert werden
