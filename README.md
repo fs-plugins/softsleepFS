@@ -13,9 +13,9 @@ wichtigste Änderungen:
 wie schnell die Lautstärke abgesenkt wird ist einstellbar, sollte man mal ausprobieren was einem angenehm erscheint
 
 
-- einstellbar ist, dass bei Inaktivität bis zum Ende der Sendung gewartet wird
-es ist unschön, wenn die Zeitabschaltung immer mitten in irgendwelchen Sendungen greift
-funktioniert nur so zuverlässig, wie die now-/next-Funktion im System bzw. Erkennung der Dateilänge
+- einstellbar ist, dass bei Inaktivität bis zum Ende der Sendung gewartet wird. 
+Es ist unschön, wenn die Zeitabschaltung immer mitten in irgendwelchen Sendungen greift
+(funktioniert nur so zuverlässig, wie die now-/next-Funktion im System bzw. Erkennung der Dateilänge)
 
     Einstellungen dafür:
     * nächste Sendung wenn weniger -> wenn die aktuelle Sendung weniger als diese Angabe dauert, wird das Ende der folgenden Sendung gewählt
