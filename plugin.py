@@ -49,7 +49,7 @@ def calculateTime(hours, minutes, day_offset = 0):
 from enigma import eDVBVolumecontrol
 from Components.VolumeControl import VolumeControl
 
-version="1.8"
+version="1.9"
 config.plugins.softsleepFS = ConfigSubsection()
 config.plugins.softsleepFS.time = ConfigInteger(default = 120, limits = (1, 9999))
 config.plugins.softsleepFS.inactivetime = ConfigInteger(default = 300, limits = (1, 1440))
@@ -368,7 +368,7 @@ class softsleepFSactionsfs:
 						debtxt+=str(art)+", leng: "+str(leng)+", max: "+str(max)+"\n"
 						if art=="sender" and leng < min_leng:
 							min_wait=True
-						elif max>0 and (leng>max or (art=="file" and leng<=min_leng):
+						elif max>0 and (leng>max or (art=="file" and leng<=min_leng)):
 							leng=max
 			if start_fail:
 				self.startTimer2.startLongTimer(5)
