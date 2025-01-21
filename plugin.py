@@ -49,7 +49,7 @@ def calculateTime(hours, minutes, day_offset = 0):
 from enigma import eDVBVolumecontrol
 from Components.VolumeControl import VolumeControl
 
-version="1.7"
+version="1.8"
 config.plugins.softsleepFS = ConfigSubsection()
 config.plugins.softsleepFS.time = ConfigInteger(default = 120, limits = (1, 9999))
 config.plugins.softsleepFS.inactivetime = ConfigInteger(default = 300, limits = (1, 1440))
@@ -346,6 +346,7 @@ class softsleepFSactionsfs:
 		if config.plugins.softsleepFS.enableinactivity.value == True and not no_system_shut:
 			start_fail=False
 			leng=None
+			max=int(config.plugins.softsleepFS.wait_max.value)*60
 			debtxt=""
 			nowtime=int(time())
 			if nowtime<1000:
@@ -357,14 +358,18 @@ class softsleepFSactionsfs:
 					endcheck=self.check_endtime()
 					endtime=endcheck[0]
 					name= endcheck[1]
+					art= endcheck[2]
 					if not endtime: 
 						start_fail=True
 					else:
 						leng=int(endtime-nowtime)
 						if leng<60:leng=60
 						min_leng=int(config.plugins.softsleepFS.wait_min.value)*60
-						if leng<=min_leng:
+						debtxt+=str(art)+", leng: "+str(leng)+", max: "+str(max)+"\n"
+						if art=="sender" and leng < min_leng:
 							min_wait=True
+						elif max>0 and (leng>max or (art=="file" and leng<=min_leng):
+							leng=max
 			if start_fail:
 				self.startTimer2.startLongTimer(5)
 				debtxt+="wait for data, 5 sec\n"
@@ -475,6 +480,7 @@ class softsleepFSactionsfs:
 	def check_endtime(self):
 		endtime=None
 		event_name=None
+		art=None
 		sref = session.nav.getCurrentlyPlayingServiceReference()
 		if sref:
 			art = "sender"
@@ -518,13 +524,7 @@ class softsleepFSactionsfs:
 						leng = event1.getDuration()
 						if start and leng:
 							endtime = start + leng
-		maxtime=time()+(int(config.plugins.softsleepFS.wait_max.value)*60)
-		if endtime==None or endtime>maxtime:
-			if config.plugins.softsleepFS.wait_max.value>0:
-				endtime=maxtime
-			else:
-				endtime=time()+(int(config.plugins.softsleepFS.inactivetime.value)*60)
-		return (endtime,event_name)
+		return (endtime,event_name,art)
 
 shutdownactionsfs = softsleepFSactionsfs()
 
